@@ -55,8 +55,15 @@ log_message("Input Queue: #{jobspec[:inputqueue]}")
 rrpid = $$
 f_iterations = 0
 
-my = Mysql::new("host", "user", "passwd", "db")
-res = my.query("select id, home_address from contacts")
+my = Mysql::new("localhost", "root", "", "portu_list")
+
+# This one grabs the whole enchilada, but for testing we'll do something a little different
+#query = 'SELECT * FROM addr WHERE status != 2 AND `long` = 0 AND `lat` = 0 LIMIT 0,5000'
+
+# The test query
+query = 'SELECT * FROM addr WHERE status != 2 LIMIT 0,1000'
+
+res = my.query(query)
 res.each do |row|
 	# Construct a Work_Unit
 	# a work_unit can have any number of elements but must have the following 3 elements
@@ -65,13 +72,18 @@ res.each do |row|
 	#   work_name
 	serialid  = "#{rrpid}_#{f_iterations}"
 	puts "Generating Serial Id: #{serialid}"
-  
+
+#  sprintf('%s %s, %s, %s, %s',
+#          	$person[STREET_NUM_IDX], $person[STREET_IDX], $person[CITY_IDX], $person[STATE_IDX], $person[ZIP_IDX]);
+
+  address = "#{res['st_num']} #{res['street']}, #{res['city']}, #{res['state']}, #{res['zip']}"
+
 	work_unit = {
 	  :created_at => Time.now.utc.strftime('%Y-%m-%d %H:%M:%S %Z'),
 	  :worker_name => 'RGKicker',
 	  :id => res['id'],
 	  :serial => serialid,
-	  :address => res[1],
+	  :address => address,
 	  :lat => "",
 	  :lng => "",
 	  :census_tract_id => ""
@@ -83,5 +95,5 @@ res.each do |row|
 	
 	# Send debug message to the logs
 	log_message("Serial: #{serialid} MsgID: #{sndmsg.id} Queued to #{jobspec[:inputqueue]}")
-}
+end
 my.close
