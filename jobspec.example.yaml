@@ -1,0 +1,9 @@
+---
+:name: GeoLocate Addresses
+:worker_name: RGKicker
+:bucket: <BucketName>
+:inputqueue: _RightGrid_Census_Geo_App_Input
+:outputqueue: _RightGrid_Census_Geo_App_Output
+:access_key_id: <AWS_ACCESS_KEY>
+:secret_access_key: <AWS_SECRET_ACCESS_KEY>
+:yahoo_api_key: <YAHOO_API_KEY>

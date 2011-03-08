@@ -9,11 +9,13 @@ var rundir = '/mnt/rightgrid';
 var worker_template_href = 'https://my.rightscale.com/api/acct/7954/ec2_server_templates/50434';
 var jc_template_href = 'https://my.rightscale.com/api/acct/7954/ec2_server_templates/50435';
 
-var bucket_name = "RightGrid_Demo_App_" + _account_id + "_" + now;
-var input_queue_name = now + "_RightGrid_Demo_App_Input";
-var output_queue_name = now + "_RightGrid_Demo_App_Output";
-var audit_queue_name = now + "_RightGrid_Demo_App_Audit";
-var error_queue_name = now + "_RightGrid_Demo_App_Error";
+var appname = "RightGrid_Census_Geo_App_";
+
+var bucket_name = appname + _account_id + "_" + now;
+var input_queue_name = now + "_" + appname + "Input";
+var output_queue_name = now + "_" + appname + "Output";
+var audit_queue_name = now + "_" + appname + "Audit";
+var error_queue_name = now + "_" + appname + "Error";
 
 input_queue = create_queue({'name': input_queue_name});
 output_queue = create_queue({'name': output_queue_name});
@@ -23,14 +25,14 @@ bucket = create_bucket({'name': bucket_name});
 
 ec2_ssh_key = create_ec2_ssh_key(
 		{
-		'aws_key_name':'RightGrid_Demo_App_' + now
+		'aws_key_name':appname + now
 		}
 		);
 
 ec2_security_group = create_ec2_security_group(
 		{
-		'aws_description':'Security group for the RightGrid demo application',
-		'aws_group_name':'RightGrid_Demo_App_' + now
+		'aws_description':'Security group for the RightGrid Census Geo application',
+		'aws_group_name':appname + now
 		}
 		);
 add_ingress_rule(ec2_security_group,
@@ -53,7 +55,7 @@ add_ingress_rule(ec2_security_group,
 deployment_url = create_deployment(
 		{
 		'description':'',
-		'nickname':'RightGrid_Demo_App_' + now
+		'nickname':appname + now
 		}
 		);
 
@@ -132,8 +134,8 @@ server_array = create_server_array(
 		'server_template_href': my_worker_template,
 		'active':'true',
 		'array_type':'queue',
-		'nickname':'RightGrid_Demo_App_' + now
+		'nickname':appname + now
 		}
 		);
 start_server(coordinator_server);
-alert("RightGrid Demo App created.  Open a SSH console to the Job Coordinator Server to begin running RightGrid.");
+alert("RightGrid Census Geo App created.  Open a SSH console to the Job Coordinator Server to begin running RightGrid.");

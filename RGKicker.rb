@@ -4,17 +4,17 @@ class RGKicker
     s3_downloaded_ist = message_env[:s3_downloaded_list]
     
     f = File.new('/mnt/rightgrid/img.log', 'a+')
-    f.write "/usr/bin/ruby -d geocode.rb -a #{message_env[:address}} -t lat\n"
+    f.write "/usr/bin/ruby -d geocode.rb -k \"#{message_env[:yahoo_api_key]}\" -a \"#{message_env[:address]}\"\n"
     f.close
-		lat=`/usr/bin/ruby -d geocode.rb -a #{message_env[:address}} -t lat`
+		lat_lng=`"/usr/bin/ruby -d geocode.rb -k "#{message_env[:yahoo_api_key]}' -a "#{message_env[:address]}"`.split(',')
+    lat = lat_lng[0]
+    lng = lat_lng[1]
+
 		f = File.new('/mnt/rightgrid/img.log', 'a+')
-    f.write "/usr/bin/ruby -d geocode.rb -a #{message_env[:address}} -t lng\n"
-    f.close
-		lng=`/usr/bin/ruby -d geocode.rb -a #{message_env[:address}} -t lng`
-		f = File.new('/mnt/rightgrid/img.log', 'a+')
-    f.write "/usr/bin/ruby -d census.rb -lat #{lat} -lng #{lng}"
+    f.write "/usr/bin/ruby -d latlng_to_census_tract.rb -lat #{lat} -lng #{lng}"
     f.close
     census_tract_id=`/usr/bin/ruby -d census.rb -lat #{lat} -lng #{lng}`
+
     finishtime = Time.now
     rg_result=0
     if $?.exitstatus == 0

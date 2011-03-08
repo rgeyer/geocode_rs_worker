@@ -27,7 +27,7 @@ def log_message(log_msg_txt)
 end
 
 # Load jobspec
-jobyaml = "jobspec.yml"
+jobyaml = "jobspec.yaml"
 jobspec = YAML::load_file(jobyaml)
 log_message("Job Yaml File: #{jobyaml}")
 
@@ -55,7 +55,33 @@ log_message("Input Queue: #{jobspec[:inputqueue]}")
 rrpid = $$
 f_iterations = 0
 
-my = Mysql::new("localhost", "root", "", "portu_list")
+my = Mysql.new("localhost", "root", nil, "portu_list")
+
+census_tracts = []
+
+# Grab the census tracts, turn them into a serialized yaml file that we'll send to S3 for latlng_to_census_tract.rb to consume
+shapes_query = "SELECT id,tract_id FROM shape_polygons GROUP BY code ORDER BY code ASC"
+shapes_res = my.query(shapes_query)
+shapes_res.each do |shape|
+  census_tract = Hash.new()
+  census_tract[:tract_id] = shape[1]
+  census_tract[:vertices] = []
+
+  vertices_query = "SELECT longitude,latitude FROM shape_vertices WHERE polygon_id = #{shape[0]} ORDER BY ordering"
+  vertices_res = my.query(vertices_query)
+  vertices_res.each do |vert|
+    census_tract[:vertices] << [vert[0].to_f, vert[1].to_f]
+  end
+
+  census_tracts << census_tract
+end
+
+File.open('censustracts.yaml', 'w') do |f|
+  f.write(census_tracts.to_yaml)
+end
+
+# TODO: Exiting prematurely for testing sake
+exit
 
 # This one grabs the whole enchilada, but for testing we'll do something a little different
 #query = 'SELECT * FROM addr WHERE status != 2 AND `long` = 0 AND `lat` = 0 LIMIT 0,5000'
@@ -84,6 +110,7 @@ res.each do |row|
 	  :id => res['id'],
 	  :serial => serialid,
 	  :address => address,
+    :placefinder_api_key => "",
 	  :lat => "",
 	  :lng => "",
 	  :census_tract_id => ""
