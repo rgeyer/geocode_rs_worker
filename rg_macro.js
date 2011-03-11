@@ -6,16 +6,17 @@ var d = new Date();
 var now = d.getTime();
 
 var rundir = '/mnt/rightgrid';
-var worker_template_href = 'https://my.rightscale.com/api/acct/7954/ec2_server_templates/50434';
-var jc_template_href = 'https://my.rightscale.com/api/acct/7954/ec2_server_templates/50435';
+
+var worker_template_href = 'https://my.rightscale.com/api/acct/2901/ec2_server_templates/10297';
+var jc_template_href = 'https://my.rightscale.com/api/acct/2901/ec2_server_templates/10298';
 
 var appname = "RightGrid_Census_Geo_App_";
 
 var bucket_name = appname + _account_id + "_" + now;
-var input_queue_name = now + "_" + appname + "Input";
-var output_queue_name = now + "_" + appname + "Output";
-var audit_queue_name = now + "_" + appname + "Audit";
-var error_queue_name = now + "_" + appname + "Error";
+var input_queue_name = appname + "Input_" + now;
+var output_queue_name = appname + "Output_" + now;
+var audit_queue_name = appname + "Audit_" + now;
+var error_queue_name = appname + "Error_" + now;
 
 input_queue = create_queue({'name': input_queue_name});
 output_queue = create_queue({'name': output_queue_name});

@@ -11,6 +11,12 @@ require 'rubygems'
 require 'right_aws'
 require 'mysql'
 
+begin
+  require 'RGKicker.rb'
+rescue
+  puts "Attempted to load RGKicker.rb but was unable to..  We're probably running on an EC2 job coordinator, otherwise some stuff is going to break soon!"
+end
+
 # This stores data in the bucket and key(path)
 def upload_file(bucket, key, data)
   bucket.put(key, data)
@@ -76,18 +82,18 @@ shapes_res.each do |shape|
   census_tracts << census_tract
 end
 
-File.open('censustracts.yaml', 'w') do |f|
-  f.write(census_tracts.to_yaml)
-end
+#File.open('censustracts.yaml', 'w') do |f|
+#  f.write(census_tracts.to_yaml)
+#end
 
-# TODO: Exiting prematurely for testing sake
-exit
+# Throw the serialized census tracts up on S3
+upload_file(bucket, 'censustracts.yaml', File.new('censustracts.yaml', 'r')) if jobspec[:to_the_grid]
 
 # This one grabs the whole enchilada, but for testing we'll do something a little different
 #query = 'SELECT * FROM addr WHERE status != 2 AND `long` = 0 AND `lat` = 0 LIMIT 0,5000'
 
 # The test query
-query = 'SELECT * FROM addr WHERE status != 2 LIMIT 0,1000'
+query = 'SELECT id,st_num,street,city,state,zip FROM addr WHERE status != 2 LIMIT 0,10'
 
 res = my.query(query)
 res.each do |row|
@@ -99,28 +105,30 @@ res.each do |row|
 	serialid  = "#{rrpid}_#{f_iterations}"
 	puts "Generating Serial Id: #{serialid}"
 
-#  sprintf('%s %s, %s, %s, %s',
-#          	$person[STREET_NUM_IDX], $person[STREET_IDX], $person[CITY_IDX], $person[STATE_IDX], $person[ZIP_IDX]);
-
-  address = "#{res['st_num']} #{res['street']}, #{res['city']}, #{res['state']}, #{res['zip']}"
+  address = "#{row[1]} #{row[2]}, #{row[3]}, #{row[4]}, #{row[5]}"
 
 	work_unit = {
 	  :created_at => Time.now.utc.strftime('%Y-%m-%d %H:%M:%S %Z'),
 	  :worker_name => 'RGKicker',
-	  :id => res['id'],
+	  :id => row[0],
 	  :serial => serialid,
 	  :address => address,
-    :placefinder_api_key => "",
+    :yahoo_api_key => jobspec[:yahoo_api_key],
 	  :lat => "",
 	  :lng => "",
-	  :census_tract_id => ""
+	  :census_tract_id => "",
+    :s3_download => [File.join(jobspec[:bucket], "censustracts.yaml")]
 	}
 
 	# Encode a work_unit using YAML and place the resulting message in the :inputqueue 
 	wu_yaml = work_unit.to_yaml
-	sndmsg = enqueue_work_unit(inqueue, wu_yaml)
-	
-	# Send debug message to the logs
-	log_message("Serial: #{serialid} MsgID: #{sndmsg.id} Queued to #{jobspec[:inputqueue]}")
+  if jobspec[:to_the_grid]
+	  sndmsg = enqueue_work_unit(inqueue, wu_yaml)
+    # Send debug message to the logs
+    log_message("Serial: #{serialid} MsgID: #{sndmsg.id} Queued to #{jobspec[:inputqueue]}")
+  else
+    work_unit.merge!({:s3_in => './', :log_dir => '/tmp'})
+    puts RGKicker.new().do_work(work_unit, nil).to_yaml
+  end
 end
 my.close

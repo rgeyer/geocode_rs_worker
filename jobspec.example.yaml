@@ -7,3 +7,4 @@
 :access_key_id: <AWS_ACCESS_KEY>
 :secret_access_key: <AWS_SECRET_ACCESS_KEY>
 :yahoo_api_key: <YAHOO_API_KEY>
+:to_the_grid: true

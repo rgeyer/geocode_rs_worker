@@ -3,12 +3,48 @@
 
 require 'yaml'
 require 'rubygems'
+require 'optparse'
 require 'georuby-extras'
 
 include GeoRuby::SimpleFeatures
 
-shapesyaml = "../censustracts.yaml"
-shapes = YAML::load_file(shapesyaml)
+options = {}
+
+optparse = OptionParser.new do |opts|
+  opts.banner = "Usage: latlng_to_census_tract -lat latitude -lng longitude -tf /path/to/tract_shapes.yaml ..."
+
+  options[:lat]
+  opts.on('-t', '--latitude latitude', 'The latitude of the coordinates to locate within a census tract') do |lat|
+    options[:lat] = lat
+  end
+
+  options[:lng]
+  opts.on('-g', '--longitude longitude', 'The longitude of the coordinates to locate within a census tract') do |lng|
+    options[:lng] = lng
+  end
+
+  options[:shapefile]
+  opts.on('-f', '--tracts_file /path/to/tract_shapes.yaml') do |shapefile|
+    options[:shapefile] = shapefile
+  end
+
+  opts.on('-h', '--help', 'Display this screen') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  optparse.parse!
+  raise "Coordinates are required" unless options[:lat] && options[:lng]
+  raise "A path to a shapefile is required" unless options[:shapefile]
+rescue Exception => e
+  STDERR.puts e
+  STDERR.puts optparse
+  exit(-1)
+end
+
+shapes = YAML::load_file(options[:shapefile])
 
 rings = []
 
@@ -20,10 +56,12 @@ end
 matchring = nil
 
 rings.each do |ring|
-  point = Point.from_coordinates([-119.877210,34.433827])
+  point = Point.from_coordinates([options[:lng],options[:lat]])
   if ring[:ring].fast_contains?(point)
     matchring = ring
   end
 end
 
-puts matchring.to_yaml
+# TODO: We're pretty much assuming success with the provided coords and putting the result down for stdout.
+# Should we try harder to report errors?
+puts matchring[:tract_id]

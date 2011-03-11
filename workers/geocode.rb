@@ -37,8 +37,10 @@ rescue Exception => e
 end
 
 pf = Placefinder::Base.new(:api_key => options[:api_key])
-georesult = pf.get :q => options[:address]
+georesult = pf.get() # :q => options[:address]
+
+puts georesult['ResultSet']['ErrorMessage']
 
 # TODO: We're pretty much assuming success with the provided address and putting the result down for stdout.
 # Should we try harder to report errors?
-puts "#{georesult['ResultSet']['Result']['latitude']},#{georesult['ResultSet']['Result']['longitude']}"
+#puts "#{georesult['ResultSet']['Result']['latitude']},#{georesult['ResultSet']['Result']['longitude']}"
